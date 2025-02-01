@@ -4,22 +4,96 @@ import spacy
 import nltk
 from nltk.tokenize import sent_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
-from typing import Dict, Optional
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from typing import Dict, Optional, Tuple
 
 # Download required NLTK data
 nltk.download("punkt", quiet=True)
+
+class HybridSummarizer:
+    """A class to handle both extractive and abstractive summarization."""
+    
+    def __init__(self, extractive_model='en_core_web_sm', abstractive_model='facebook/bart-large-cnn'):
+        # Extractive model setup
+        try:
+            self.nlp = spacy.load(extractive_model)
+        except OSError:
+            spacy.cli.download(extractive_model)
+            self.nlp = spacy.load(extractive_model)
+        
+        # Abstractive model setup
+        self.tokenizer = AutoTokenizer.from_pretrained(abstractive_model)
+        self.abstractive_model = AutoModelForSeq2SeqLM.from_pretrained(abstractive_model)
+        
+        # Define summarization strategy for different sections
+        self.summarization_strategy = {
+            'Methods': self.extractive_summary,
+            'Results': self.extractive_summary,
+            'Introduction': self.abstractive_summary,
+            'Discussion': self.abstractive_summary,
+            'Conclusion': self.abstractive_summary
+        }
+    
+    def extractive_summary(self, text: str, max_sentences: int = 3) -> str:
+        """Generate extractive summary using TF-IDF."""
+        sentences = [sent.text for sent in self.nlp(text).sents]
+        
+        if not sentences:
+            return ""
+            
+        vectorizer = TfidfVectorizer(stop_words='english')
+        tfidf_matrix = vectorizer.fit_transform(sentences)
+        
+        sentence_scores = tfidf_matrix.sum(axis=1)
+        top_sentence_indices = sorted(
+            range(len(sentence_scores)),
+            key=lambda i: sentence_scores[i, 0],
+            reverse=True
+        )[:max_sentences]
+        
+        return ' '.join([sentences[i] for i in sorted(top_sentence_indices)])
+    
+    def abstractive_summary(self, text: str, max_length: int = 150, min_length: int = 50) -> str:
+        """Generate abstractive summary using BART."""
+        inputs = self.tokenizer(
+            text,
+            max_length=1024,
+            return_tensors='pt',
+            truncation=True
+        )
+        
+        summary_ids = self.abstractive_model.generate(
+            inputs['input_ids'],
+            num_beams=4,
+            max_length=max_length,
+            min_length=min_length,
+            early_stopping=True
+        )
+        
+        return self.tokenizer.decode(
+            summary_ids[0],
+            skip_special_tokens=True
+        )
+    
+    def summarize_sections(self, sections: Dict[str, str]) -> Dict[str, str]:
+        """Generate summaries for different sections using appropriate strategy."""
+        summaries = {}
+        for section, content in sections.items():
+            if content.strip():
+                summarizer = self.summarization_strategy.get(
+                    section,
+                    self.extractive_summary
+                )
+                summaries[section] = summarizer(content)
+        
+        return summaries
 
 class PDFProcessor:
     """A class to handle PDF text extraction and processing."""
     
     def __init__(self):
         """Initialize the processor with required models."""
-        try:
-            self.nlp = spacy.load('en_core_web_sm')
-        except OSError:
-            # If model not found, download it
-            spacy.cli.download('en_core_web_sm')
-            self.nlp = spacy.load('en_core_web_sm')
+        self.summarizer = HybridSummarizer()
     
     def clean_text(self, text: str) -> str:
         """Clean extracted text by removing metadata and formatting."""
@@ -68,46 +142,21 @@ class PDFProcessor:
             sections[current_section] += sentence + " "
         
         return sections
-    
-    def extract_key_information(self, text: str) -> Dict[str, str]:
-        """Extract key information using spaCy NLP."""
-        doc = self.nlp(text)
-        
-        # Extract entities
-        entities = {ent.label_: ent.text for ent in doc.ents}
-        
-        # Extract key sentences using basic frequency
-        vectorizer = TfidfVectorizer(max_features=100)
-        tfidf_matrix = vectorizer.fit_transform([sent.text for sent in doc.sents])
-        
-        important_words = dict(zip(
-            vectorizer.get_feature_names_out(),
-            tfidf_matrix.sum(axis=0).A1
-        ))
-        
-        return {
-            "entities": entities,
-            "key_terms": {k: v for k, v in sorted(
-                important_words.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )[:10]}
-        }
 
-def extract_text_from_pdf(pdf_path: str) -> Optional[str]:
+def process_pdf(pdf_path: str) -> Tuple[Dict[str, str], Dict[str, str]]:
     """
-    Extract and process text from a PDF file.
+    Process a PDF file and return both the original sections and their summaries.
     
     Args:
         pdf_path (str): Path to the PDF file
         
     Returns:
-        str: Processed text from the PDF, or None if extraction fails
+        Tuple[Dict[str, str], Dict[str, str]]: Original sections and their summaries
     """
     try:
         processor = PDFProcessor()
         
-        # Open and extract text from PDF
+        # Extract text from PDF
         doc = fitz.open(pdf_path)
         raw_text = ""
         
@@ -120,31 +169,11 @@ def extract_text_from_pdf(pdf_path: str) -> Optional[str]:
         # Split into sections
         sections = processor.split_into_sections(cleaned_text)
         
-        # Extract key information
-        key_info = processor.extract_key_information(cleaned_text)
+        # Generate summaries
+        summaries = processor.summarizer.summarize_sections(sections)
         
-        # Combine all processed text
-        final_text = "\n\n".join([
-            f"{section}:\n{content}"
-            for section, content in sections.items()
-            if content.strip()
-        ])
-        
-        return final_text
+        return sections, summaries
 
     except Exception as e:
         print(f"Error processing PDF: {str(e)}")
-        return None
-
-if __name__ == "__main__":
-    # Test the processor
-    test_pdf = "sample.pdf"
-    try:
-        result = extract_text_from_pdf(test_pdf)
-        if result:
-            print("PDF processed successfully!")
-            print(result[:500] + "...")
-        else:
-            print("Failed to process PDF")
-    except Exception as e:
-        print(f"Error during testing: {str(e)}")
+        return None, None
