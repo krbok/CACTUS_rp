@@ -1,10 +1,6 @@
 import streamlit as st
-from pdf_processor import extract_text_from_pdf
-from summarizer import summarize_text
-from ppt_generator import create_ppt
-from podcast_generator import generate_podcast
-from graphical_abstract import generate_graphical_abstract
-from video_generator import generate_video
+from pdf_processor import process_pdf
+import tempfile
 import os
 
 # Page Configuration
@@ -15,7 +11,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Dark Theme Custom CSS
 st.markdown("""
     <style>
     /* Main App Theme */
@@ -152,6 +147,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
 # App Title
 st.markdown("<h1 class='cyber-title'>🧬 RESEARCH TRANSFORMER</h1>", unsafe_allow_html=True)
 
@@ -171,7 +167,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("### SELECT OUTPUT FORMAT")
 option = st.selectbox(
     "",
-    ["NEURAL PPT™", "QUANTUM PODCAST™", "HOLOGRAPHIC ABSTRACT™", "SYNTHETIC VIDEO™"],
+    ["NEURAL PPT™", "QUANTUM PODCAST™"],
     format_func=lambda x: f"⚡ {x}"
 )
 
@@ -179,69 +175,66 @@ option = st.selectbox(
 if uploaded_file:
     if st.button("INITIATE TRANSFORMATION", use_container_width=True):
         try:
-            with open("temp.pdf", "wb") as f:
-                f.write(uploaded_file.getbuffer())
+            # Create a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
+                tmp_file.write(uploaded_file.getbuffer())
+                temp_path = tmp_file.name
             
             with st.spinner("INITIALIZING NEURAL NETWORKS..."):
-                # Processing with cyberpunk-style progress tracking
+                # Processing with progress tracking
                 progress = st.progress(0)
                 
-                # Text extraction
+                # Process PDF
                 st.markdown("🔮 QUANTUM TEXT EXTRACTION IN PROGRESS...")
-                text = extract_text_from_pdf("temp.pdf")
-                progress.progress(30)
+                sections, summaries = process_pdf(temp_path)
+                progress.progress(50)
                 
-                if not text.strip():
+                if not sections or not summaries:
                     st.markdown(
                         "<div class='error-msg'>⚠️ EXTRACTION FAILED: NEURAL NETWORK DISRUPTION</div>",
                         unsafe_allow_html=True
                     )
                 else:
-                    # Summarization
-                    st.markdown("🧠 ACTIVATING NEURAL SUMMARIZATION...")
-                    summary = summarize_text(text)
-                    progress.progress(60)
+                    # Format Generation
+                    st.markdown("⚡ INITIATING QUANTUM TRANSFORMATION...")
+                    output_file = None
                     
-                    if not summary.strip():
+                    # Generate output based on selected format
+                    if "PPT" in option:
+                        from ppt_generator import create_ppt
+                        output_file = create_ppt(summaries)
+                    elif "PODCAST" in option:
+                        from podcast_generator import generate_podcast
+                        output_file = generate_podcast(summaries)
+                    elif "ABSTRACT" in option:
+                        from graphical_abstract import generate_graphical_abstract
+                        output_file = generate_graphical_abstract(summaries)
+                    elif "VIDEO" in option:
+                        from video_generator import generate_video
+                        output_file = generate_video(summaries)
+                    
+                    progress.progress(100)
+                    
+                    # Handle output
+                    if output_file and os.path.exists(output_file):
+                        st.balloons()
                         st.markdown(
-                            "<div class='error-msg'>⚠️ SYNTHESIS ERROR: AI CORE MALFUNCTION</div>",
+                            "<div class='success-msg'>✨ TRANSFORMATION COMPLETE: DOWNLOAD READY</div>",
                             unsafe_allow_html=True
                         )
+                        
+                        with open(output_file, "rb") as f:
+                            st.download_button(
+                                "DOWNLOAD SYNTHESIS",
+                                f,
+                                file_name=os.path.basename(output_file),
+                                use_container_width=True
+                            )
                     else:
-                        # Format Generation
-                        st.markdown("⚡ INITIATING QUANTUM TRANSFORMATION...")
-                        output_file = None
-                        
-                        if "PPT" in option:
-                            output_file = create_ppt(summary)
-                        elif "PODCAST" in option:
-                            output_file = generate_podcast(summary)
-                        elif "ABSTRACT" in option:
-                            output_file = generate_graphical_abstract(summary)
-                        elif "VIDEO" in option:
-                            output_file = generate_video(summary)
-                        
-                        progress.progress(100)
-                        
-                        if output_file and os.path.exists(output_file):
-                            st.balloons()
-                            st.markdown(
-                                "<div class='success-msg'>✨ TRANSFORMATION COMPLETE: DOWNLOAD READY</div>",
-                                unsafe_allow_html=True
-                            )
-                            
-                            with open(output_file, "rb") as f:
-                                st.download_button(
-                                    "DOWNLOAD SYNTHESIS",
-                                    f,
-                                    file_name=os.path.basename(output_file),
-                                    use_container_width=True
-                                )
-                        else:
-                            st.markdown(
-                                f"<div class='error-msg'>⚠️ SYNTHESIS FAILED: QUANTUM INSTABILITY DETECTED</div>",
-                                unsafe_allow_html=True
-                            )
+                        st.markdown(
+                            "<div class='error-msg'>⚠️ SYNTHESIS FAILED: QUANTUM INSTABILITY DETECTED</div>",
+                            unsafe_allow_html=True
+                        )
         
         except Exception as e:
             st.markdown(
@@ -250,8 +243,9 @@ if uploaded_file:
             )
         
         finally:
-            if os.path.exists("temp.pdf"):
-                os.remove("temp.pdf")
+            # Cleanup
+            if 'temp_path' in locals() and os.path.exists(temp_path):
+                os.remove(temp_path)
 
 st.markdown("</div>", unsafe_allow_html=True)
 
