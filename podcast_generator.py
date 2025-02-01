@@ -15,7 +15,7 @@ def generate_podcast(summary: str, output_filename: str = "output.mp3") -> Optio
     """
     try:
         # ElevenLabs API Configuration
-        ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "your-elevenlabs-api-key")
+        ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_170668631500ba5f690d17b3e63a35470395613624c1501e")
         VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "m5qndnI7u4OAdXhH0Mr5")
         
         # API endpoint
