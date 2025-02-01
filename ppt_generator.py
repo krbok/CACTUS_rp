@@ -1,183 +1,138 @@
 from pptx import Presentation
 from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
-import re
-from typing import Dict, Optional, List
+import tempfile
+import os
+from typing import Dict, Optional
 
-def format_bullet_points(text: str) -> List[str]:
-    """Convert text into well-formatted bullet points"""
-    # Split into sentences
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    # Remove any empty strings and clean up
-    return [s.strip() for s in sentences if s.strip()]
+class PresentationGenerator:
+    """Class to generate clean, minimal PowerPoint presentations from research paper summaries."""
+    
+    def __init__(self):
+        self.prs = Presentation()
+        self.title_slide_layout = self.prs.slide_layouts[0]  # Title slide
+        self.content_slide_layout = self.prs.slide_layouts[1]  # Content slide
+        
+        # Define simpler text styles
+        self.title_font_size = Pt(32)  # Reduced from 44
+        self.subtitle_font_size = Pt(24)  # Reduced from 32
+        self.body_font_size = Pt(18)
+        
+        # Simple black and white colors
+        self.colors = {
+            'black': RGBColor(0, 0, 0),
+            'white': RGBColor(255, 255, 255)
+        }
+    
+    def _add_title_slide(self, title: str) -> None:
+        """Add title slide with minimal styling."""
+        slide = self.prs.slides.add_slide(self.title_slide_layout)
+        
+        # Add title
+        title_shape = slide.shapes.title
+        title_shape.text = title
+        title_frame = title_shape.text_frame
+        paragraph = title_frame.paragraphs[0]
+        paragraph.font.size = self.title_font_size
+        paragraph.font.color.rgb = self.colors['black']
+        paragraph.alignment = PP_ALIGN.CENTER
+        
+        # Add subtitle
+        subtitle_shape = slide.placeholders[1]
+        subtitle_shape.text = "Research Paper Summary"
+        subtitle_frame = subtitle_shape.text_frame
+        paragraph = subtitle_frame.paragraphs[0]
+        paragraph.font.size = self.subtitle_font_size
+        paragraph.font.color.rgb = self.colors['black']
+        paragraph.alignment = PP_ALIGN.CENTER
+    
+    def _add_section_slide(self, title: str, content: str) -> None:
+        """Add content slide with clean, minimal design."""
+        slide = self.prs.slides.add_slide(self.content_slide_layout)
+        
+        # Add section title
+        title_shape = slide.shapes.title
+        title_shape.text = title
+        title_frame = title_shape.text_frame
+        paragraph = title_frame.paragraphs[0]
+        paragraph.font.size = self.subtitle_font_size
+        paragraph.font.color.rgb = self.colors['black']
+        paragraph.alignment = PP_ALIGN.LEFT
+        
+        # Add content
+        content_shape = slide.placeholders[1]
+        content_frame = content_shape.text_frame
+        
+        # Clear any existing paragraphs
+        for _ in range(len(content_frame.paragraphs) - 1):
+            p = content_frame.paragraphs[-1]
+            tr = p._element
+            tr.getparent().remove(tr)
+        
+        # Add new content
+        p = content_frame.paragraphs[0]
+        p.text = content
+        p.font.size = self.body_font_size
+        p.font.color.rgb = self.colors['black']
+        p.alignment = PP_ALIGN.LEFT
+        
+        # Add comfortable spacing
+        p.space_before = Pt(6)
+        p.space_after = Pt(6)
+    
+    def generate_presentation(self, sections: Dict[str, str], output_path: Optional[str] = None) -> str:
+        """
+        Generate clean PowerPoint presentation from paper sections.
+        
+        Args:
+            sections: Dictionary of section titles and their content
+            output_path: Optional path to save the presentation
+            
+        Returns:
+            str: Path to the generated presentation
+        """
+        # Extract title or use default
+        title = sections.get('Title', 'Research Paper Summary').strip()
+        if not title:
+            title = "Research Paper Summary"
+        
+        # Add title slide
+        self._add_title_slide(title)
+        
+        # Add content slides in standard academic paper order
+        section_order = [
+            'Abstract',
+            'Introduction',
+            'Methods',
+            'Results',
+            'Discussion',
+            'Conclusion'
+        ]
+        
+        for section in section_order:
+            if section in sections and sections[section].strip():
+                self._add_section_slide(section, sections[section])
+        
+        # Create temporary file if no output path provided
+        if output_path is None:
+            temp_dir = tempfile.mkdtemp()
+            output_path = os.path.join(temp_dir, "research_summary.pptx")
+        
+        # Save presentation
+        self.prs.save(output_path)
+        return output_path
 
-def create_ppt(summary: str) -> Optional[str]:
+def create_ppt(sections: Dict[str, str], output_path: Optional[str] = None) -> str:
     """
-    Create a structured PowerPoint presentation from research paper summary
+    Create simple, clean PowerPoint presentation from paper sections.
     
     Args:
-        summary (str): Processed text containing different sections
+        sections: Dictionary of section titles and their content
+        output_path: Optional path to save the presentation
+        
     Returns:
-        str: Path to the generated PowerPoint file
+        str: Path to the generated presentation
     """
-    try:
-        # Initialize presentation
-        prs = Presentation()
-        
-        # Set 16:9 aspect ratio
-        prs.slide_width = Inches(13.333)
-        prs.slide_height = Inches(7.5)
-
-        # Title Slide
-        title_slide = prs.slides.add_slide(prs.slide_layouts[0])
-        title = title_slide.shapes.title
-        subtitle = title_slide.placeholders[1]
-        
-        title.text = "Research Paper Analysis"
-        title.text_frame.paragraphs[0].font.size = Pt(44)
-        
-        subtitle.text = "Summary and Key Findings"
-        subtitle.text_frame.paragraphs[0].font.size = Pt(32)
-
-        # Abstract Slide
-        if "Abstract:" in summary:
-            abstract_slide = prs.slides.add_slide(prs.slide_layouts[1])
-            title = abstract_slide.shapes.title
-            content = abstract_slide.placeholders[1]
-            
-            title.text = "Abstract"
-            abstract_text = re.search(r"Abstract:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if abstract_text:
-                content.text = abstract_text.group(1).strip()
-
-        # Introduction Slides
-        if "Introduction:" in summary:
-            intro_text = re.search(r"Introduction:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if intro_text:
-                # Main Introduction
-                intro_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                title = intro_slide.shapes.title
-                content = intro_slide.placeholders[1]
-                
-                title.text = "Introduction"
-                bullet_points = format_bullet_points(intro_text.group(1))
-                
-                # Split into multiple slides if needed
-                for i in range(0, len(bullet_points), 5):
-                    if i > 0:
-                        intro_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                        title = intro_slide.shapes.title
-                        content = intro_slide.placeholders[1]
-                        title.text = "Introduction (continued)"
-                    
-                    text_frame = content.text_frame
-                    text_frame.clear()
-                    
-                    for point in bullet_points[i:i+5]:
-                        p = text_frame.add_paragraph()
-                        p.text = point
-                        p.level = 0
-                        p.font.size = Pt(18)
-
-        # Methodology Section
-        if "Methods:" in summary:
-            methods_text = re.search(r"Methods:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if methods_text:
-                methods_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                title = methods_slide.shapes.title
-                content = methods_slide.placeholders[1]
-                
-                title.text = "Methodology"
-                bullet_points = format_bullet_points(methods_text.group(1))
-                
-                text_frame = content.text_frame
-                text_frame.clear()
-                
-                for point in bullet_points:
-                    p = text_frame.add_paragraph()
-                    p.text = point
-                    p.level = 0
-                    p.font.size = Pt(18)
-
-        # Results Section
-        if "Results:" in summary:
-            results_text = re.search(r"Results:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if results_text:
-                results_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                title = results_slide.shapes.title
-                content = results_slide.placeholders[1]
-                
-                title.text = "Key Findings"
-                bullet_points = format_bullet_points(results_text.group(1))
-                
-                text_frame = content.text_frame
-                text_frame.clear()
-                
-                for point in bullet_points:
-                    p = text_frame.add_paragraph()
-                    p.text = point
-                    p.level = 0
-                    p.font.size = Pt(18)
-
-        # Discussion Section
-        if "Discussion:" in summary:
-            discussion_text = re.search(r"Discussion:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if discussion_text:
-                discussion_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                title = discussion_slide.shapes.title
-                content = discussion_slide.placeholders[1]
-                
-                title.text = "Discussion"
-                bullet_points = format_bullet_points(discussion_text.group(1))
-                
-                text_frame = content.text_frame
-                text_frame.clear()
-                
-                for point in bullet_points:
-                    p = text_frame.add_paragraph()
-                    p.text = point
-                    p.level = 0
-                    p.font.size = Pt(18)
-
-        # Conclusion Section
-        if "Conclusion:" in summary:
-            conclusion_text = re.search(r"Conclusion:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
-            if conclusion_text:
-                conclusion_slide = prs.slides.add_slide(prs.slide_layouts[1])
-                title = conclusion_slide.shapes.title
-                content = conclusion_slide.placeholders[1]
-                
-                title.text = "Conclusions"
-                bullet_points = format_bullet_points(conclusion_text.group(1))
-                
-                text_frame = content.text_frame
-                text_frame.clear()
-                
-                for point in bullet_points:
-                    p = text_frame.add_paragraph()
-                    p.text = point
-                    p.level = 0
-                    p.font.size = Pt(18)
-
-        # Save presentation
-        output_filename = "output.pptx"
-        prs.save(output_filename)
-        return output_filename
-
-    except Exception as e:
-        print(f"Error generating presentation: {str(e)}")
-        return None
-
-if __name__ == "__main__":
-    # Test the generator
-    test_summary = """
-    Title: Research Analysis
-    Abstract: This is the abstract section with key points.
-    Introduction: First introduction point. Second introduction point. Third point.
-    Methods: First methodology point. Second methodology point.
-    Results: First result. Second result. Third result.
-    Discussion: First discussion point. Second discussion point.
-    Conclusion: First conclusion. Second conclusion.
-    """
-    result = create_ppt(test_summary)
-    print(f"Presentation generated: {result}")
+    generator = PresentationGenerator()
+    return generator.generate_presentation(sections, output_path)
