@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="600" version="1.1" width="800">
+  <defs>
+    <linearGradient id="background_grad">
+      <stop offset="0" stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#16213e"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_8984618928913431801_4396004618407697589" x1="712.0914831590123" x2="352.0167796698857" y1="88.18769078454791" y2="-367.04379487287673">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_8984618928913431801_3173708379198249841" x1="712.0914831590123" x2="-480.1916336133663" y1="88.18769078454791" y2="307.11990020197567">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_8984618928913431801_9119158774782099924" x1="712.0914831590123" x2="225.21496565518706" y1="88.18769078454791" y2="540.0">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_8984618928913431801_1339584091223087117" x1="712.0914831590123" x2="-409.131594870719" y1="88.18769078454791" y2="-268.2637961136467">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_4396004618407697589_3173708379198249841" x1="352.0167796698857" x2="-480.1916336133663" y1="-367.04379487287673" y2="307.11990020197567">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_4396004618407697589_9119158774782099924" x1="352.0167796698857" x2="225.21496565518706" y1="-367.04379487287673" y2="540.0">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_4396004618407697589_1339584091223087117" x1="352.0167796698857" x2="-409.131594870719" y1="-367.04379487287673" y2="-268.2637961136467">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_3173708379198249841_9119158774782099924" x1="-480.1916336133663" x2="225.21496565518706" y1="307.11990020197567" y2="540.0">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_3173708379198249841_1339584091223087117" x1="-480.1916336133663" x2="-409.131594870719" y1="307.11990020197567" y2="-268.2637961136467">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="edge_grad_9119158774782099924_1339584091223087117" x1="225.21496565518706" x2="-409.131594870719" y1="540.0" y2="-268.2637961136467">
+      <stop offset="0" stop-color="#4a90e2" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#4a90e2" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+  <rect fill="url(#background_grad)" height="600" width="800" x="0" y="0"/>
+  <line stroke="url(#edge_grad_8984618928913431801_4396004618407697589)" stroke-width="2" x1="712.0914831590123" x2="352.0167796698857" y1="88.18769078454791" y2="-367.04379487287673"/>
+  <line stroke="url(#edge_grad_8984618928913431801_3173708379198249841)" stroke-width="2" x1="712.0914831590123" x2="-480.1916336133663" y1="88.18769078454791" y2="307.11990020197567"/>
+  <line stroke="url(#edge_grad_8984618928913431801_9119158774782099924)" stroke-width="2" x1="712.0914831590123" x2="225.21496565518706" y1="88.18769078454791" y2="540.0"/>
+  <line stroke="url(#edge_grad_8984618928913431801_1339584091223087117)" stroke-width="2" x1="712.0914831590123" x2="-409.131594870719" y1="88.18769078454791" y2="-268.2637961136467"/>
+  <line stroke="url(#edge_grad_4396004618407697589_3173708379198249841)" stroke-width="2" x1="352.0167796698857" x2="-480.1916336133663" y1="-367.04379487287673" y2="307.11990020197567"/>
+  <line stroke="url(#edge_grad_4396004618407697589_9119158774782099924)" stroke-width="2" x1="352.0167796698857" x2="225.21496565518706" y1="-367.04379487287673" y2="540.0"/>
+  <line stroke="url(#edge_grad_4396004618407697589_1339584091223087117)" stroke-width="2" x1="352.0167796698857" x2="-409.131594870719" y1="-367.04379487287673" y2="-268.2637961136467"/>
+  <line stroke="url(#edge_grad_3173708379198249841_9119158774782099924)" stroke-width="2" x1="-480.1916336133663" x2="225.21496565518706" y1="307.11990020197567" y2="540.0"/>
+  <line stroke="url(#edge_grad_3173708379198249841_1339584091223087117)" stroke-width="2" x1="-480.1916336133663" x2="-409.131594870719" y1="307.11990020197567" y2="-268.2637961136467"/>
+  <line stroke="url(#edge_grad_9119158774782099924_1339584091223087117)" stroke-width="2" x1="225.21496565518706" x2="-409.131594870719" y1="540.0" y2="-268.2637961136467"/>
+  <circle cx="712.0914831590123" cy="88.18769078454791" fill="#4a90e2" opacity="0.8" r="30" stroke="white" stroke-width="2"/>
+  <text dominant-baseline="middle" fill="white" font-family="Arial" font-size="14px" text-anchor="middle" x="712.0914831590123" y="88.18769078454791">match</text>
+  <circle cx="352.0167796698857" cy="-367.04379487287673" fill="#4a90e2" opacity="0.8" r="30" stroke="white" stroke-width="2"/>
+  <text dominant-baseline="middle" fill="white" font-family="Arial" font-size="14px" text-anchor="middle" x="352.0167796698857" y="-367.04379487287673">prediction</text>
+  <circle cx="-480.1916336133663" cy="307.11990020197567" fill="#4a90e2" opacity="0.8" r="30" stroke="white" stroke-width="2"/>
+  <text dominant-baseline="middle" fill="white" font-family="Arial" font-size="14px" text-anchor="middle" x="-480.1916336133663" y="307.11990020197567">based</text>
+  <circle cx="225.21496565518706" cy="540.0" fill="#4a90e2" opacity="0.8" r="30" stroke="white" stroke-width="2"/>
+  <text dominant-baseline="middle" fill="white" font-family="Arial" font-size="14px" text-anchor="middle" x="225.21496565518706" y="540.0">community</text>
+  <circle cx="-409.131594870719" cy="-268.2637961136467" fill="#4a90e2" opacity="0.8" r="30" stroke="white" stroke-width="2"/>
+  <text dominant-baseline="middle" fill="white" font-family="Arial" font-size="14px" text-anchor="middle" x="-409.131594870719" y="-268.2637961136467">event</text>
+</svg>
