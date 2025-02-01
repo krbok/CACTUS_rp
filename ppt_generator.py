@@ -1,149 +1,169 @@
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
-class PresentationGenerator:
-    def __init__(self):
-        self.prs = Presentation()
-        self.set_slide_dimensions(13.333, 7.5)  # 16:9 aspect ratio
-        
-        # Define consistent formatting
-        self.title_font = "Calibri"
-        self.body_font = "Calibri"
-        self.title_size = Pt(44)
-        self.subtitle_size = Pt(32)
-        self.body_size = Pt(18)
-        
-        # Define colors
-        self.primary_color = RGBColor(0, 255, 157)  # Cyber green
-        self.secondary_color = RGBColor(0, 204, 255)  # Cyber blue
-        self.text_color = RGBColor(224, 224, 255)  # Light purple
-    
-    def set_slide_dimensions(self, width: float, height: float):
-        """Set presentation dimensions in inches"""
-        self.prs.slide_width = Inches(width)
-        self.prs.slide_height = Inches(height)
-    
-    def create_title_slide(self, title: str) -> None:
-        """Create an attractive title slide"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[0])
-        
-        # Add title
-        title_shape = slide.shapes.title
-        title_shape.text = title
-        title_shape.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
-        
-        # Format title
-        title_frame = title_shape.text_frame.paragraphs[0]
-        title_frame.font.name = self.title_font
-        title_frame.font.size = self.title_size
-        title_frame.font.color.rgb = self.primary_color
-        
-        # Add subtitle
-        subtitle = slide.placeholders[1]
-        subtitle.text = "Research Paper Analysis"
-        subtitle_frame = subtitle.text_frame.paragraphs[0]
-        subtitle_frame.font.name = self.body_font
-        subtitle_frame.font.size = self.subtitle_size
-        subtitle_frame.font.color.rgb = self.secondary_color
-    
-    def create_section_slide(self, title: str, content: str) -> None:
-        """Create a slide for a specific section"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[1])
-        
-        # Add and format title
-        title_shape = slide.shapes.title
-        title_shape.text = title
-        title_frame = title_shape.text_frame.paragraphs[0]
-        title_frame.font.name = self.title_font
-        title_frame.font.size = self.subtitle_size
-        title_frame.font.color.rgb = self.primary_color
-        
-        # Add and format content
-        content_shape = slide.placeholders[1]
-        content_frame = content_shape.text_frame
-        
-        # Split content into bullet points if it's too long
-        sentences = re.split(r'(?<=[.!?])\s+', content)
-        
-        for i, sentence in enumerate(sentences):
-            if i == 0:
-                paragraph = content_frame.paragraphs[0]
-            else:
-                paragraph = content_frame.add_paragraph()
-            
-            paragraph.text = sentence
-            paragraph.font.name = self.body_font
-            paragraph.font.size = self.body_size
-            paragraph.font.color.rgb = self.text_color
-    
-    def add_summary_slide(self, key_points: Dict[str, float]) -> None:
-        """Add a summary slide with key points"""
-        slide = self.prs.slides.add_slide(self.prs.slide_layouts[1])
-        
-        title_shape = slide.shapes.title
-        title_shape.text = "Key Takeaways"
-        title_frame = title_shape.text_frame.paragraphs[0]
-        title_frame.font.name = self.title_font
-        title_frame.font.size = self.subtitle_size
-        title_frame.font.color.rgb = self.primary_color
-        
-        content_shape = slide.placeholders[1]
-        content_frame = content_shape.text_frame
-        
-        for point, score in list(key_points.items())[:5]:  # Top 5 key points
-            paragraph = content_frame.add_paragraph()
-            paragraph.text = f"• {point}"
-            paragraph.font.name = self.body_font
-            paragraph.font.size = self.body_size
-            paragraph.font.color.rgb = self.text_color
+def format_bullet_points(text: str) -> List[str]:
+    """Convert text into well-formatted bullet points"""
+    # Split into sentences
+    sentences = re.split(r'(?<=[.!?])\s+', text)
+    # Remove any empty strings and clean up
+    return [s.strip() for s in sentences if s.strip()]
 
 def create_ppt(summary: str) -> Optional[str]:
     """
-    Create a PowerPoint presentation from the research paper summary
+    Create a structured PowerPoint presentation from research paper summary
     
     Args:
-        summary (str): Processed text from the PDF processor
-        
+        summary (str): Processed text containing different sections
     Returns:
         str: Path to the generated PowerPoint file
     """
     try:
-        # Initialize presentation generator
-        generator = PresentationGenerator()
+        # Initialize presentation
+        prs = Presentation()
         
-        # Extract title from summary (first line of Title section)
-        title_match = re.search(r"Title:\s*([^\n]+)", summary)
-        title = title_match.group(1) if title_match else "Research Paper Summary"
+        # Set 16:9 aspect ratio
+        prs.slide_width = Inches(13.333)
+        prs.slide_height = Inches(7.5)
+
+        # Title Slide
+        title_slide = prs.slides.add_slide(prs.slide_layouts[0])
+        title = title_slide.shapes.title
+        subtitle = title_slide.placeholders[1]
         
-        # Create title slide
-        generator.create_title_slide(title)
+        title.text = "Research Paper Analysis"
+        title.text_frame.paragraphs[0].font.size = Pt(44)
         
-        # Process each section
-        sections = {
-            "Abstract": "Research Overview",
-            "Introduction": "Background",
-            "Methods": "Methodology",
-            "Results": "Key Findings",
-            "Discussion": "Analysis",
-            "Conclusion": "Conclusions"
-        }
-        
-        for section_marker, slide_title in sections.items():
-            section_match = re.search(f"{section_marker}:\s*([^\n]+(?:\n[^\n]+)*)", summary)
-            if section_match:
-                content = section_match.group(1).strip()
-                if content:
-                    generator.create_section_slide(slide_title, content)
-        
-        # Save the presentation
+        subtitle.text = "Summary and Key Findings"
+        subtitle.text_frame.paragraphs[0].font.size = Pt(32)
+
+        # Abstract Slide
+        if "Abstract:" in summary:
+            abstract_slide = prs.slides.add_slide(prs.slide_layouts[1])
+            title = abstract_slide.shapes.title
+            content = abstract_slide.placeholders[1]
+            
+            title.text = "Abstract"
+            abstract_text = re.search(r"Abstract:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if abstract_text:
+                content.text = abstract_text.group(1).strip()
+
+        # Introduction Slides
+        if "Introduction:" in summary:
+            intro_text = re.search(r"Introduction:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if intro_text:
+                # Main Introduction
+                intro_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                title = intro_slide.shapes.title
+                content = intro_slide.placeholders[1]
+                
+                title.text = "Introduction"
+                bullet_points = format_bullet_points(intro_text.group(1))
+                
+                # Split into multiple slides if needed
+                for i in range(0, len(bullet_points), 5):
+                    if i > 0:
+                        intro_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                        title = intro_slide.shapes.title
+                        content = intro_slide.placeholders[1]
+                        title.text = "Introduction (continued)"
+                    
+                    text_frame = content.text_frame
+                    text_frame.clear()
+                    
+                    for point in bullet_points[i:i+5]:
+                        p = text_frame.add_paragraph()
+                        p.text = point
+                        p.level = 0
+                        p.font.size = Pt(18)
+
+        # Methodology Section
+        if "Methods:" in summary:
+            methods_text = re.search(r"Methods:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if methods_text:
+                methods_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                title = methods_slide.shapes.title
+                content = methods_slide.placeholders[1]
+                
+                title.text = "Methodology"
+                bullet_points = format_bullet_points(methods_text.group(1))
+                
+                text_frame = content.text_frame
+                text_frame.clear()
+                
+                for point in bullet_points:
+                    p = text_frame.add_paragraph()
+                    p.text = point
+                    p.level = 0
+                    p.font.size = Pt(18)
+
+        # Results Section
+        if "Results:" in summary:
+            results_text = re.search(r"Results:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if results_text:
+                results_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                title = results_slide.shapes.title
+                content = results_slide.placeholders[1]
+                
+                title.text = "Key Findings"
+                bullet_points = format_bullet_points(results_text.group(1))
+                
+                text_frame = content.text_frame
+                text_frame.clear()
+                
+                for point in bullet_points:
+                    p = text_frame.add_paragraph()
+                    p.text = point
+                    p.level = 0
+                    p.font.size = Pt(18)
+
+        # Discussion Section
+        if "Discussion:" in summary:
+            discussion_text = re.search(r"Discussion:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if discussion_text:
+                discussion_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                title = discussion_slide.shapes.title
+                content = discussion_slide.placeholders[1]
+                
+                title.text = "Discussion"
+                bullet_points = format_bullet_points(discussion_text.group(1))
+                
+                text_frame = content.text_frame
+                text_frame.clear()
+                
+                for point in bullet_points:
+                    p = text_frame.add_paragraph()
+                    p.text = point
+                    p.level = 0
+                    p.font.size = Pt(18)
+
+        # Conclusion Section
+        if "Conclusion:" in summary:
+            conclusion_text = re.search(r"Conclusion:(.*?)(?=\w+:|\Z)", summary, re.DOTALL)
+            if conclusion_text:
+                conclusion_slide = prs.slides.add_slide(prs.slide_layouts[1])
+                title = conclusion_slide.shapes.title
+                content = conclusion_slide.placeholders[1]
+                
+                title.text = "Conclusions"
+                bullet_points = format_bullet_points(conclusion_text.group(1))
+                
+                text_frame = content.text_frame
+                text_frame.clear()
+                
+                for point in bullet_points:
+                    p = text_frame.add_paragraph()
+                    p.text = point
+                    p.level = 0
+                    p.font.size = Pt(18)
+
+        # Save presentation
         output_filename = "output.pptx"
-        generator.prs.save(output_filename)
+        prs.save(output_filename)
         return output_filename
-    
+
     except Exception as e:
         print(f"Error generating presentation: {str(e)}")
         return None
@@ -151,16 +171,13 @@ def create_ppt(summary: str) -> Optional[str]:
 if __name__ == "__main__":
     # Test the generator
     test_summary = """
-    Title: Analysis of Advanced Machine Learning Techniques
-    Abstract: This paper presents a comprehensive review...
-    Introduction: Machine learning has revolutionized...
-    Methods: We employed various techniques...
-    Results: Our findings indicate...
-    Discussion: The results suggest...
-    Conclusion: We have demonstrated...
+    Title: Research Analysis
+    Abstract: This is the abstract section with key points.
+    Introduction: First introduction point. Second introduction point. Third point.
+    Methods: First methodology point. Second methodology point.
+    Results: First result. Second result. Third result.
+    Discussion: First discussion point. Second discussion point.
+    Conclusion: First conclusion. Second conclusion.
     """
     result = create_ppt(test_summary)
-    if result:
-        print(f"Presentation generated successfully: {result}")
-    else:
-        print("Failed to generate presentation")
+    print(f"Presentation generated: {result}")
