@@ -7,45 +7,42 @@ tqdm==4.66.2
 python-dotenv==1.0.1
 
 # PDF processing
-PyMuPDF==1.23.26
+PyMuPDF==1.23.26  # For fitz
 pdfplumber==0.10.3
 PyPDF2==3.0.1
 
 # Text processing and NLP
 nltk==3.8.1
 spacy==3.7.4
+# Ensure to run: python -m spacy download en_core_web_sm
+
+# Machine Learning and AI
 transformers==4.37.2
 torch==2.2.0
-scikit-learn==1.4.1.post1   # Latest stable version
-
-# Audio and speech processing
-gTTS==2.5.1
-pyttsx3==2.90
-soundfile==0.12.1
-elevenlabs==0.3.0
-
-# Video generation
-moviepy==1.0.3
-opencv-python==4.9.0.80
+scikit-learn==1.4.0
 
 # Document processing
 python-pptx==0.6.23
-python-docx==1.1.0  # Updated to latest version
+python-docx==1.0.1
+
+# Audio and speech processing 
+elevenlabs==0.3.0
+# Removed gTTS, pyttsx3, and soundfile as code only uses elevenlabs
+
+# Data visualization
+matplotlib==3.8.2
+plotly==5.18.0
+seaborn==0.13.2
+networkx==3.2.1
 
 # Image processing
 Pillow==10.2.0
 cairosvg==2.7.1
 svgwrite==1.4.3
 
-# Data visualization
-matplotlib==3.8.3  # Latest minor update
-plotly==5.19.0  # Updated to latest version
-seaborn==0.13.2
-networkx==3.2.1
-
-# UI enhancements
+# UI components
 streamlit-option-menu==0.3.12
 streamlit-custom-notification-box==0.1.1
 
-# Development tools
+# HTTP requests
 requests==2.31.0
