@@ -16,7 +16,7 @@ nltk==3.8.1
 spacy==3.7.4
 transformers==4.37.2
 torch==2.2.0
-scikit-learn==1.4.0
+scikit-learn==1.4.1.post1   # Latest stable version
 
 # Audio and speech processing
 gTTS==2.5.1
@@ -28,9 +28,9 @@ elevenlabs==0.3.0
 moviepy==1.0.3
 opencv-python==4.9.0.80
 
-# Presentation generation
+# Document processing
 python-pptx==0.6.23
-python-docx==1.0.1  # Added for additional document processing
+python-docx==1.1.0  # Updated to latest version
 
 # Image processing
 Pillow==10.2.0
@@ -38,8 +38,8 @@ cairosvg==2.7.1
 svgwrite==1.4.3
 
 # Data visualization
-matplotlib==3.8.2
-plotly==5.18.0
+matplotlib==3.8.3  # Latest minor update
+plotly==5.19.0  # Updated to latest version
 seaborn==0.13.2
 networkx==3.2.1
 
