@@ -167,7 +167,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("### SELECT OUTPUT FORMAT")
 option = st.selectbox(
     "",
-    ["NEURAL PPT™", "QUANTUM PODCAST™"],
+    ["NEURAL PPT™"],
     format_func=lambda x: f"⚡ {x}"
 )
 
