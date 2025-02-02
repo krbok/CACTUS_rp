@@ -1,182 +1,108 @@
 import streamlit as st
 from pdf_processor import process_pdf
+from ppt_generator import create_ppt
+import io
 import tempfile
 import os
-import base64
-from pathlib import Path
+import logging
 
-# Page Configuration
-st.set_page_config(
-    page_title="Research Paper Transformer",
-    page_icon="🧬",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Custom CSS (keeping your existing styles)
-st.markdown("""
-    <style>
-    .stApp {
-        background: linear-gradient(180deg, #0a0a0f 0%, #1a1a2f 100%);
-        color: #e0e0ff;
-    }
+# Page config
+st.set_page_config(page_title="Research Paper Transformer", page_icon="🧬")
+
+# Initialize session state for debugging
+if 'debug_info' not in st.session_state:
+    st.session_state.debug_info = []
+
+def log_debug(message):
+    """Add debug message to session state and log it"""
+    logger.info(message)
+    st.session_state.debug_info.append(message)
+
+def process_uploaded_file(uploaded_file):
+    """Process the uploaded PDF file with detailed logging"""
+    try:
+        log_debug("Starting file processing")
+        
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_debug(f"Created temporary directory: {temp_dir}")
+            
+            # Save uploaded file
+            temp_pdf_path = os.path.join(temp_dir, "input.pdf")
+            with open(temp_pdf_path, "wb") as f:
+                f.write(uploaded_file.getvalue())
+            log_debug(f"Saved uploaded file to: {temp_pdf_path}")
+            
+            # Process PDF
+            log_debug("Starting PDF processing")
+            sections, summaries = process_pdf(temp_pdf_path)
+            
+            if not sections or not summaries:
+                log_debug("No content extracted from PDF")
+                return None
+            
+            log_debug(f"Successfully extracted {len(sections)} sections")
+            
+            # Create presentation
+            temp_ppt_path = os.path.join(temp_dir, "output.pptx")
+            log_debug(f"Creating presentation at: {temp_ppt_path}")
+            
+            ppt_path = create_ppt(summaries, temp_ppt_path)
+            
+            if not ppt_path or not os.path.exists(ppt_path):
+                log_debug("Failed to create presentation file")
+                return None
+            
+            log_debug("Reading presentation file")
+            with open(ppt_path, 'rb') as ppt_file:
+                presentation_data = ppt_file.read()
+                log_debug(f"Successfully read presentation ({len(presentation_data)} bytes)")
+                return presentation_data
+                
+    except Exception as e:
+        log_debug(f"Error in process_uploaded_file: {str(e)}")
+        raise e
+
+# Main app
+st.title("🧬 Research Paper Transformer")
+
+# Debug information expander
+with st.expander("Debug Information"):
+    if st.button("Clear Debug Log"):
+        st.session_state.debug_info = []
     
-    .cyber-title {
-        font-family: 'BlinkMacSystemFont', sans-serif;
-        font-size: 3.5rem;
-        font-weight: 800;
-        text-align: center;
-        color: #00ff9d;
-        text-shadow: 0 0 10px #00ff9d80;
-        letter-spacing: 2px;
-        margin: 2rem 0;
-        padding: 1rem;
-        background: linear-gradient(90deg, #0a0a0f 0%, #1a1a2f 50%, #0a0a0f 100%);
-        border-radius: 10px;
-        border: 1px solid #00ff9d40;
-    }
-    
-    .tech-container {
-        background: rgba(20, 20, 35, 0.7);
-        border: 1px solid #00ff9d40;
-        border-radius: 15px;
-        padding: 2rem;
-        margin: 1rem 0;
-    }
-    
-    .upload-zone {
-        border: 2px dashed #00ff9d;
-        background: rgba(0, 255, 157, 0.05);
-        border-radius: 15px;
-        padding: 2.5rem;
-        text-align: center;
-    }
-    
-    .success-msg {
-        background: rgba(0, 255, 157, 0.1);
-        border: 1px solid #00ff9d;
-        color: #00ff9d;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
-    
-    .error-msg {
-        background: rgba(255, 0, 87, 0.1);
-        border: 1px solid #ff0057;
-        color: #ff0057;
-        padding: 1rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-    }
-    </style>
-""", unsafe_allow_html=True)
+    for msg in st.session_state.debug_info:
+        st.text(msg)
 
-# Initialize session state
-if 'temp_files' not in st.session_state:
-    st.session_state.temp_files = []
-
-def cleanup_temp_files():
-    """Clean up temporary files at the end of the session"""
-    for temp_file in st.session_state.temp_files:
-        try:
-            if os.path.exists(temp_file):
-                os.remove(temp_file)
-        except Exception as e:
-            st.error(f"Error cleaning up temporary file: {e}")
-    st.session_state.temp_files = []
-
-# App Title
-st.markdown("<h1 class='cyber-title'>🧬 RESEARCH TRANSFORMER</h1>", unsafe_allow_html=True)
-
-# Main Container
-st.markdown("<div class='tech-container'>", unsafe_allow_html=True)
-
-# Upload Section
-st.markdown("<div class='upload-zone'>", unsafe_allow_html=True)
-uploaded_file = st.file_uploader(
-    "INITIALIZE PAPER UPLOAD",
-    type=["pdf"],
-    help="Upload your research paper (PDF format)"
-)
-st.markdown("</div>", unsafe_allow_html=True)
+# File uploader
+uploaded_file = st.file_uploader("Upload Research Paper (PDF)", type=['pdf'])
 
 if uploaded_file:
-    try:
-        # Create a temporary directory that will be cleaned up automatically
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Save uploaded file to temporary directory
-            temp_path = Path(temp_dir) / "input.pdf"
-            with open(temp_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            st.session_state.temp_files.append(str(temp_path))
-
-            if st.button("INITIATE TRANSFORMATION", use_container_width=True):
-                with st.spinner("PROCESSING DOCUMENT..."):
-                    try:
-                        # Process PDF
-                        progress = st.progress(0)
-                        st.markdown("🔮 EXTRACTING CONTENT...")
-                        
-                        sections, summaries = process_pdf(str(temp_path))
-                        progress.progress(50)
-
-                        if not sections or not summaries:
-                            st.markdown(
-                                "<div class='error-msg'>⚠️ EXTRACTION FAILED: No content could be extracted</div>",
-                                unsafe_allow_html=True
-                            )
-                        else:
-                            # Generate PPT
-                            st.markdown("⚡ GENERATING PRESENTATION...")
-                            from ppt_generator import create_ppt
-                            
-                            output_path = Path(temp_dir) / "output.pptx"
-                            output_file = create_ppt(summaries, str(output_path))
-                            
-                            progress.progress(100)
-
-                            if output_file and Path(output_file).exists():
-                                st.balloons()
-                                st.markdown(
-                                    "<div class='success-msg'>✨ TRANSFORMATION COMPLETE!</div>",
-                                    unsafe_allow_html=True
-                                )
-                                
-                                # Read the file and create download button
-                                with open(output_file, "rb") as f:
-                                    bytes_data = f.read()
-                                    b64 = base64.b64encode(bytes_data).decode()
-                                    
-                                    href = f'<a href="data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,{b64}" download="presentation.pptx" class="download-button">DOWNLOAD PRESENTATION</a>'
-                                    st.markdown(href, unsafe_allow_html=True)
-                            else:
-                                st.markdown(
-                                    "<div class='error-msg'>⚠️ GENERATION FAILED: Could not create presentation</div>",
-                                    unsafe_allow_html=True
-                                )
-
-                    except Exception as e:
-                        st.markdown(
-                            f"<div class='error-msg'>⚠️ PROCESSING ERROR: {str(e)}</div>",
-                            unsafe_allow_html=True
-                        )
-
-    except Exception as e:
-        st.markdown(
-            f"<div class='error-msg'>⚠️ FILE HANDLING ERROR: {str(e)}</div>",
-            unsafe_allow_html=True
-        )
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Footer
-st.markdown("""
-    <div style='text-align: center; padding: 2rem; color: #00ff9d; font-size: 0.9rem;'>
-        POWERED BY QUANTUM AI • EST. 2025
-    </div>
-""", unsafe_allow_html=True)
-
-# Cleanup temp files when the session ends
-cleanup_temp_files()
+    log_debug(f"File uploaded: {uploaded_file.name}")
+    
+    if st.button("Transform to Presentation"):
+        try:
+            with st.spinner("Processing..."):
+                presentation_data = process_uploaded_file(uploaded_file)
+                
+                if presentation_data:
+                    st.success("Transformation complete!")
+                    
+                    # Create download button
+                    st.download_button(
+                        label="Download Presentation",
+                        data=presentation_data,
+                        file_name="presentation.pptx",
+                        mime="application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    )
+                    log_debug("Download button created")
+                else:
+                    st.error("Failed to create presentation")
+                    
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
+            log_debug(f"Error during transformation: {str(e)}")
