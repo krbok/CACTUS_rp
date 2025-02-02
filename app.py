@@ -2,6 +2,18 @@ import streamlit as st
 from pdf_processor import process_pdf
 import tempfile
 import os
+import logging
+import sys
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Page Configuration
 st.set_page_config(
@@ -10,6 +22,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
 
 st.markdown("""
     <style>
@@ -175,23 +188,39 @@ option = st.selectbox(
 if uploaded_file:
     if st.button("INITIATE TRANSFORMATION", use_container_width=True):
         try:
-            # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
-                tmp_file.write(uploaded_file.getbuffer())
-                temp_path = tmp_file.name
+            logger.info("Starting file processing")
+            
+            # Create a temporary directory that persists
+            temp_dir = tempfile.mkdtemp()
+            temp_path = os.path.join(temp_dir, 'uploaded.pdf')
+            
+            # Save uploaded file
+            try:
+                with open(temp_path, 'wb') as f:
+                    f.write(uploaded_file.getbuffer())
+                logger.info(f"File saved to temporary path: {temp_path}")
+            except Exception as e:
+                logger.error(f"Error saving uploaded file: {str(e)}")
+                raise
             
             with st.spinner("INITIALIZING NEURAL NETWORKS..."):
-                # Processing with progress tracking
                 progress = st.progress(0)
                 
-                # Process PDF
+                # Process PDF with error checking
                 st.markdown("🔮 QUANTUM TEXT EXTRACTION IN PROGRESS...")
-                sections, summaries = process_pdf(temp_path)
+                try:
+                    sections, summaries = process_pdf(temp_path)
+                    logger.info("PDF processing completed successfully")
+                except Exception as e:
+                    logger.error(f"Error in PDF processing: {str(e)}")
+                    raise
+                
                 progress.progress(50)
                 
                 if not sections or not summaries:
+                    logger.warning("No content extracted from PDF")
                     st.markdown(
-                        "<div class='error-msg'>⚠️ EXTRACTION FAILED: NEURAL NETWORK DISRUPTION</div>",
+                        "<div class='error-msg'>⚠️ EXTRACTION FAILED: NO CONTENT FOUND</div>",
                         unsafe_allow_html=True
                     )
                 else:
@@ -199,19 +228,15 @@ if uploaded_file:
                     st.markdown("⚡ INITIATING QUANTUM TRANSFORMATION...")
                     output_file = None
                     
-                    # Generate output based on selected format
-                    if "PPT" in option:
-                        from ppt_generator import create_ppt
-                        output_file = create_ppt(summaries)
-                    elif "PODCAST" in option:
-                        from podcast_generator import generate_podcast
-                        output_file = generate_podcast(summaries)
-                    elif "ABSTRACT" in option:
-                        from graphical_abstract import generate_graphical_abstract
-                        output_file = generate_graphical_abstract(summaries)
-                    elif "VIDEO" in option:
-                        from video_generator import generate_video
-                        output_file = generate_video(summaries)
+                    try:
+                        # Generate output based on selected format
+                        if "PPT" in option:
+                            from ppt_generator import create_ppt
+                            output_file = create_ppt(summaries)
+                            logger.info(f"PPT created at: {output_file}")
+                    except Exception as e:
+                        logger.error(f"Error in format generation: {str(e)}")
+                        raise
                     
                     progress.progress(100)
                     
@@ -223,29 +248,42 @@ if uploaded_file:
                             unsafe_allow_html=True
                         )
                         
-                        with open(output_file, "rb") as f:
-                            st.download_button(
-                                "DOWNLOAD SYNTHESIS",
-                                f,
-                                file_name=os.path.basename(output_file),
-                                use_container_width=True
-                            )
+                        try:
+                            with open(output_file, "rb") as f:
+                                st.download_button(
+                                    "DOWNLOAD SYNTHESIS",
+                                    f,
+                                    file_name=os.path.basename(output_file),
+                                    use_container_width=True
+                                )
+                            logger.info("File ready for download")
+                        except Exception as e:
+                            logger.error(f"Error preparing download: {str(e)}")
+                            raise
                     else:
+                        logger.error(f"Output file not found or invalid: {output_file}")
                         st.markdown(
-                            "<div class='error-msg'>⚠️ SYNTHESIS FAILED: QUANTUM INSTABILITY DETECTED</div>",
+                            "<div class='error-msg'>⚠️ SYNTHESIS FAILED: OUTPUT FILE NOT FOUND</div>",
                             unsafe_allow_html=True
                         )
         
         except Exception as e:
+            logger.error(f"System failure: {str(e)}")
             st.markdown(
                 f"<div class='error-msg'>⚠️ SYSTEM FAILURE: {str(e)}</div>",
                 unsafe_allow_html=True
             )
         
         finally:
-            # Cleanup
-            if 'temp_path' in locals() and os.path.exists(temp_path):
-                os.remove(temp_path)
+            # Cleanup with error handling
+            try:
+                if 'temp_path' in locals() and os.path.exists(temp_path):
+                    os.remove(temp_path)
+                if 'temp_dir' in locals() and os.path.exists(temp_dir):
+                    os.rmdir(temp_dir)
+                logger.info("Cleanup completed")
+            except Exception as e:
+                logger.error(f"Error during cleanup: {str(e)}")
 
 st.markdown("</div>", unsafe_allow_html=True)
 
